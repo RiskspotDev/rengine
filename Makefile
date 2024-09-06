@@ -41,7 +41,8 @@ changepassword:	## Change password for user
 
 migrate:		## Apply migrations
 	${COMPOSE_PREFIX_CMD} ${DOCKER_COMPOSE} ${COMPOSE_ALL_FILES} exec web python3 manage.py migrate
-
+collectstatic:		## Collect static files
+	${COMPOSE_PREFIX_CMD} ${DOCKER_COMPOSE} ${COMPOSE_ALL_FILES} exec web python3 manage.py collectstatic
 pull:			## Pull Docker images.
 	docker login docker.pkg.github.com
 	${COMPOSE_PREFIX_CMD} ${DOCKER_COMPOSE} ${COMPOSE_ALL_FILES} pull
