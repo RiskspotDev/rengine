@@ -11,6 +11,7 @@ urlpatterns = [
         '<slug:slug>/add/target',
         views.add_target,
         name='add_target'),
+    path('<slug:slug>/add/targetss', views.my_get_view, name='my_get_view'),
     path(
         '<slug:slug>/add/organization',
         views.add_organization,
