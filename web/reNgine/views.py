@@ -1,10 +1,10 @@
 import os
 import mimetypes
-from django.contrib.auth.decorators import login_required
+# from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, Http404
 from django.conf import settings
 
-@login_required
+# @login_required
 def serve_protected_media(request, path):
     file_path = os.path.join(settings.MEDIA_ROOT, path)
     if os.path.isdir(file_path):
