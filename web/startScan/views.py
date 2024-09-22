@@ -20,6 +20,11 @@ from reNgine.tasks import create_scan_activity, initiate_scan, run_command
 from scanEngine.models import EngineType
 from startScan.models import *
 from targetApp.models import *
+from reNgine.definitions import LIVE_SCAN
+from rest_framework.decorators import (
+    api_view
+)
+from rest_framework.response import Response
 
 
 def scan_history(request, slug):
@@ -251,10 +256,12 @@ def all_endpoints(request, slug):
     return render(request, 'startScan/endpoints.html', context)
 
 
+@api_view(['GET', 'POST'])
 def start_scan_ui(request, slug, domain_id):
     domain = get_object_or_404(Domain, id=domain_id)
     if request.method == "POST":
         # Get imported and out-of-scope subdomains
+        request_origin = request.POST.get('request_origin')
         subdomains_in = request.POST['importSubdomainTextArea'].split()
         subdomains_in = [s.rstrip() for s in subdomains_in if s]
         subdomains_out = request.POST['outOfScopeSubdomainTextarea'].split()
@@ -266,7 +273,7 @@ def start_scan_ui(request, slug, domain_id):
         else:
             filterPath = ''
 
-        # Get engine type
+        # Get engine typeLIVE_SCAN
         engine_id = request.POST['scan_mode']
 
         # Create ScanHistory object
@@ -292,11 +299,15 @@ def start_scan_ui(request, slug, domain_id):
         initiate_scan.apply_async(kwargs=kwargs)
         scan.save()
 
+        msg = f'Scan Started for {domain.name}'
+        if request_origin:
+            return Response({'success': True, 'msg': msg})
+
         # Send start notif
         messages.add_message(
             request,
             messages.INFO,
-            f'Scan Started for {domain.name}')
+            msg)
         return HttpResponseRedirect(reverse('scan_history', kwargs={'slug': slug}))
 
     # GET request
@@ -724,7 +735,7 @@ def start_organization_scan(request, id, slug):
 
 @has_permission_decorator(PERM_INITATE_SCANS_SUBSCANS, redirect_url=FOUR_OH_FOUR_URL)
 def schedule_organization_scan(request, slug, id):
-    organization =Organization.objects.get(id=id)
+    organization = Organization.objects.get(id=id)
     if request.method == "POST":
         engine_type = int(request.POST['scan_mode'])
         engine = get_object_or_404(EngineType, id=engine_type)
