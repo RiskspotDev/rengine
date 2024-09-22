@@ -30,6 +30,7 @@ from rest_framework.decorators import (
     authentication_classes,
     permission_classes,
 )
+from .serializers import DomainSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +58,7 @@ def add_target(request, slug):
         multiple_targets = request.POST.get('add-multiple-targets')
         ip_target = request.POST.get('add-ip-target')
         request_origin = request.POST.get('request_origin')
+        domain_data = {}
 
         try:
             # Multiple targets
@@ -132,6 +134,7 @@ def add_target(request, slug):
                             domain.insert_date = timezone.now()
                             domain.save()
                             added_target_count += 1
+                            domain_data = DomainSerializer(domain).data
                             if created:
                                 logger.info(f'Added new domain {domain.name}')
 
@@ -287,7 +290,7 @@ def add_target(request, slug):
             )
             if request_origin:
                 msg = f'{added_target_count} targets added successfully'
-                return Response({'success': True, 'msg': msg})
+                return Response({'success': True, 'msg': msg, 'domain': domain_data})
             return http.HttpResponseRedirect(reverse('add_target', kwargs={'slug': slug}))
 
         # No targets added, redirect to add target page
@@ -301,7 +304,7 @@ def add_target(request, slug):
         # Targets added successfully, redirect to targets list
         msg = f'{added_target_count} targets added successfully'
         if request_origin:
-            return Response({ 'success': True, msg: msg })
+            return Response({ 'success': True, msg: msg, 'domain': domain_data })
         messages.add_message(request, messages.SUCCESS, msg)
         return http.HttpResponseRedirect(reverse('list_target', kwargs={'slug': slug}))
 
