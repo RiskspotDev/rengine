@@ -25,6 +25,7 @@ from rest_framework.decorators import (
     api_view
 )
 from rest_framework.response import Response
+from .serializers import ScanHistorySerializer
 
 
 def scan_history(request, slug):
@@ -301,7 +302,8 @@ def start_scan_ui(request, slug, domain_id):
 
         msg = f'Scan Started for {domain.name}'
         if request_origin:
-            return Response({'success': True, 'msg': msg})
+            scan_data = ScanHistorySerializer(scan).data
+            return Response({'success': True, 'msg': msg, 'scan': scan_data})
 
         # Send start notif
         messages.add_message(
