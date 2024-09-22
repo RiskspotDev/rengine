@@ -9,6 +9,10 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 
 from reNgine.views import serve_protected_media
+from rest_framework_simplejwt.views import (
+    TokenObtainSlidingView,
+    TokenRefreshSlidingView,
+)
 
 schema_view = get_schema_view(
    openapi.Info(
@@ -27,9 +31,6 @@ urlpatterns = [
     path(
         'admin/',
         admin.site.urls),
-    path(
-        '',
-        include('dashboard.urls')),
     path(
         'target/',
         include('targetApp.urls')),
@@ -60,6 +61,13 @@ urlpatterns = [
         serve_protected_media, 
         name='serve_protected_media'
     ),
+    path('auth/', include('djoser.urls')),
+    path('auth/', include('djoser.urls.jwt')),
+    path('api/token/', TokenObtainSlidingView.as_view(), name='token_obtain'),
+    path('api/token/refresh/', TokenRefreshSlidingView.as_view(), name='token_refresh'),
+    path(
+        '',
+        include('dashboard.urls')),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 # ] + static(settings.MEDIA_URL, document_root=settings.RENGINE_RESULTS) + \
     
