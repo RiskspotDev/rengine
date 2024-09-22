@@ -4,6 +4,7 @@ env = environ.FileAwareEnv()
 
 import mimetypes
 import os
+from datetime import timedelta
 
 from reNgine.init import first_run
 from reNgine.utilities import RengineTaskFormatter
@@ -79,7 +80,9 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'mathfilters',
     'drf_yasg',
-    'rolepermissions'
+    'rolepermissions',
+    'djoser',
+    'rest_framework_simplejwt'
 ]
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -87,7 +90,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'login_required.middleware.LoginRequiredMiddleware',
+    # 'login_required.middleware.LoginRequiredMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -121,6 +124,9 @@ REST_FRAMEWORK = {
         'rest_framework_datatables.pagination.DatatablesPageNumberPagination'
     ),
     'PAGE_SIZE': 500,
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
 }
 WSGI_APPLICATION = 'reNgine.wsgi.application'
 
@@ -164,9 +170,9 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
 
-LOGIN_REQUIRED_IGNORE_VIEW_NAMES = [
-    'login',
-]
+# LOGIN_REQUIRED_IGNORE_VIEW_NAMES = [
+#     'login',
+# ]
 
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'onboarding'
@@ -305,4 +311,14 @@ LOGGING = {
             'propagate': False
         }
     },
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+}
+
+DJOSER = {
+    'SERIALIZERS': {},
 }
