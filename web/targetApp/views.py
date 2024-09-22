@@ -22,6 +22,14 @@ from scanEngine.models import *
 from startScan.models import *
 from targetApp.forms import *
 from targetApp.models import *
+from rest_framework.response import Response
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.decorators import (
+    api_view,
+    authentication_classes,
+    permission_classes,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -30,14 +38,17 @@ def index(request):
     # TODO bring default target page
     return render(request, 'target/index.html')
 
-
-@has_permission_decorator(PERM_MODIFY_TARGETS, redirect_url=FOUR_OH_FOUR_URL)
+@api_view(['GET', 'POST'])
+# @permission_classes([IsAuthenticated])
+# @authentication_classes([JWTAuthentication])
+# @has_permission_decorator(PERM_MODIFY_TARGETS, redirect_url=FOUR_OH_FOUR_URL)
 def add_target(request, slug):
     """Add a new target. Targets can be URLs, IPs, CIDR ranges, or Domains.
 
     Args:
         request: Django request.
     """
+    organization_query = []
     project = Project.objects.get(slug=slug)
     form = AddTargetForm(request.POST or None)
     if request.method == "POST":
@@ -45,6 +56,8 @@ def add_target(request, slug):
         added_target_count = 0
         multiple_targets = request.POST.get('add-multiple-targets')
         ip_target = request.POST.get('add-ip-target')
+        request_origin = request.POST.get('request_origin')
+
         try:
             # Multiple targets
             if multiple_targets:
@@ -224,7 +237,7 @@ def add_target(request, slug):
                                 description=description,
                                 insert_date=timezone.now())
                             added_target_count += 1
-                        
+
                             # Optionally add domain to organization
                             if organization:
                                 organization_query = Organization.objects.filter(name=organization)
@@ -265,7 +278,6 @@ def add_target(request, slug):
                             ip.save()
                             if created:
                                 logger.info(f'Added new IP {ip}')
-
         except Exception as e:
             logger.exception(e)
             messages.add_message(
@@ -273,6 +285,9 @@ def add_target(request, slug):
                 messages.ERROR,
                 f'Exception while adding domain: {e}'
             )
+            if request_origin:
+                msg = f'{added_target_count} targets added successfully'
+                return Response({'success': True, 'msg': msg})
             return http.HttpResponseRedirect(reverse('add_target', kwargs={'slug': slug}))
 
         # No targets added, redirect to add target page
@@ -285,6 +300,8 @@ def add_target(request, slug):
 
         # Targets added successfully, redirect to targets list
         msg = f'{added_target_count} targets added successfully'
+        if request_origin:
+            return Response({ 'success': True, msg: msg })
         messages.add_message(request, messages.SUCCESS, msg)
         return http.HttpResponseRedirect(reverse('list_target', kwargs={'slug': slug}))
 
@@ -295,6 +312,19 @@ def add_target(request, slug):
         'form': form
     }
     return render(request, 'target/add.html', context)
+
+
+@api_view(['GET'])
+# @permission_classes([IsAuthenticated])
+# @authentication_classes([JWTAuthentication])
+# @has_permission_decorator(PERM_MODIFY_TARGETS, redirect_url=FOUR_OH_FOUR_URL)
+# @has_permission_decorator(PERM_MODIFY_TARGETS)
+def my_get_view(request, slug):
+    data = {
+        "message": "Hey there, this is a GET request!",
+        "slug": slug
+    }
+    return Response(data)
 
 
 def list_target(request, slug):
