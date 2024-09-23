@@ -25,7 +25,8 @@ from rest_framework.decorators import (
     api_view
 )
 from rest_framework.response import Response
-from .serializers import ScanHistorySerializer
+from .serializers import ScanHistorySerializer, ScanActivitySerializer, MostRecentScanSerializer, CountryISOSerializer
+from scanEngine.serializers import EngineTypeSerializer
 
 
 def scan_history(request, slug):
@@ -40,9 +41,10 @@ def subscan_history(request, slug):
     return render(request, 'startScan/subscan_history.html', context)
 
 
+@api_view(['GET'])
 def detail_scan(request, id, slug):
     ctx = {}
-
+    request_origin = request.POST.get('request_origin')
     # Get scan objects
     scan = get_object_or_404(ScanHistory, id=id)
     domain_id = scan.domain.id
@@ -215,6 +217,14 @@ def detail_scan(request, id, slug):
     if last_scans.count() > 1:
         last_scan = last_scans.order_by('-start_scan_date')[1]
         ctx['last_scan'] = last_scan
+    if request_origin:
+        ctx['history'] = ScanHistorySerializer(ctx['history']).data
+        ctx['scan_activity'] = ScanActivitySerializer(ctx['scan_activity']).data
+        ctx['scan_engines'] = EngineTypeSerializer(ctx['scan_engines']).data
+        ctx['most_recent_scans'] = MostRecentScanSerializer(ctx['most_recent_scans']).data
+        ctx['asset_countries'] = CountryISOSerializer(ctx['asset_countries']).data
+
+        return Response({ 'success': True, 'scan_results': ctx })
 
     return render(request, 'startScan/detail_scan.html', ctx)
 
