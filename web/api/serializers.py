@@ -827,50 +827,89 @@ class SubdomainSerializer(serializers.ModelSerializer):
 	todos_count = serializers.SerializerMethodField('get_todos_count')
 	directories_count = serializers.SerializerMethodField('get_directories_count')
 	subscan_count = serializers.SerializerMethodField('get_subscan_count')
-	ip_addresses = IpSerializer(many=True)
-	waf = WafSerializer(many=True)
-	technologies = TechnologySerializer(many=True)
-	directories = DirectoryScanSerializer(many=True)
+	scan_history = ScanHistorySerializer(many=True, required=False)
+	ip_addresses = IpSerializer(many=True, required=False)
+	waf = WafSerializer(many=True, required=False)
+	technologies = TechnologySerializer(many=True, required=False)
+	directories = DirectoryScanSerializer(many=True, required=False)
+	name = serializers.CharField(required=False)
 
 
 	class Meta:
 		model = Subdomain
 		fields = '__all__'
+		# exclude = ['scan_history', 'ip_addresses', 'waf', 'technologies', 'name', 'directories']
 
 	def get_is_interesting(self, subdomain):
-		scan_id = subdomain.scan_history.id if subdomain.scan_history else None
-		return (
-			get_interesting_subdomains(scan_id)
-			.filter(name=subdomain.name)
-			.exists()
-		)
+		scan_id = getattr(subdomain, 'scan_history', None).id if getattr(subdomain, 'scan_history', None) else None
 
-	def get_endpoint_count(self, subdomain):
-		return subdomain.get_endpoint_count
+		if getattr(subdomain, 'name', None):
+			return (
+				get_interesting_subdomains(scan_id)
+				.filter(name=subdomain.name)
+				.exists()
+			)
+		return False
 
-	def get_info_count(self, subdomain):
-		return subdomain.get_info_count
+	def get_endpoint_count(self, subdomains):
+		if subdomains:
+			return sum(
+				subdomain.get_endpoint_count for subdomain in subdomains if hasattr(subdomain, 'get_endpoint_count'))
+		return 0
 
-	def get_low_count(self, subdomain):
-		return subdomain.get_low_count
+	def get_info_count(self, subdomains):
+		if subdomains.exists():
+			return sum(
+				subdomain.get_info_count for subdomain in subdomains if hasattr(subdomain, 'get_info_count')
+			)
+		return 0
 
-	def get_medium_count(self, subdomain):
-		return subdomain.get_medium_count
+	def get_low_count(self, subdomains):
+		if subdomains.exists():
+			return sum(
+				subdomain.get_low_count for subdomain in subdomains if hasattr(subdomain, 'get_low_count')
+			)
+		return 0
 
-	def get_high_count(self, subdomain):
-		return subdomain.get_high_count
+	def get_medium_count(self, subdomains):
+		if subdomains.exists():
+			return sum(
+				subdomain.get_medium_count for subdomain in subdomains if hasattr(subdomain, 'get_medium_count')
+			)
+		return 0
 
-	def get_critical_count(self, subdomain):
-		return subdomain.get_critical_count
+	def get_high_count(self, subdomains):
+		if subdomains.exists():
+			return sum(
+				subdomain.get_high_count for subdomain in subdomains if hasattr(subdomain, 'get_high_count')
+			)
+		return 0
 
-	def get_directories_count(self, subdomain):
-		return subdomain.get_directories_count
+	def get_critical_count(self, subdomains):
+		if subdomains.exists():
+			return sum(
+				subdomain.get_critical_count for subdomain in subdomains if hasattr(subdomain, 'get_critical_count')
+			)
+		return 0
 
-	def get_subscan_count(self, subdomain):
-		return subdomain.get_subscan_count
+	def get_directories_count(self, subdomains):
+		if subdomains.exists():
+			return sum(
+				subdomain.get_directories_count for subdomain in subdomains if hasattr(subdomain, 'get_directories_count')
+			)
+		return 0
+
+	def get_subscan_count(self, subdomains):
+		if subdomains.exists():
+			return sum(
+				subdomain.get_subscan_count for subdomain in subdomains if hasattr(subdomain, 'get_subscan_count')
+			)
+		return 0
 
 	def get_todos_count(self, subdomain):
-		return len(subdomain.get_todos.filter(is_done=False))
+		if hasattr(subdomain, 'get_todos'):
+			return subdomain.get_todos.filter(is_done=False).count()
+		return 0
 
 	def get_vuln_count(self, obj):
 		try:
@@ -897,8 +936,8 @@ class EndpointOnlyURLsSerializer(serializers.ModelSerializer):
 
 class VulnerabilitySerializer(serializers.ModelSerializer):
 
-	discovered_date = serializers.SerializerMethodField()
-	severity = serializers.SerializerMethodField()
+	# discovered_date = serializers.SerializerMethodField(required=False)
+	# severity = serializers.SerializerMethodField(required=False)
 
 	def get_discovered_date(self, Vulnerability):
 		return Vulnerability.discovered_date.strftime("%b %d, %Y %H:%M")
