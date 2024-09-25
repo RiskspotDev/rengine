@@ -25,10 +25,17 @@ from rest_framework.decorators import (
     api_view
 )
 from rest_framework.response import Response
-from .serializers import ScanHistorySerializer, ScanActivitySerializer, MostRecentScanSerializer, CountryISOSerializer
+from api.serializers import (ScanHistorySerializer,
+                          SubdomainSerializer,
+                          VulnerabilitySerializer,)
+from .serializers import (ScanActivitySerializer,
+                          MostRecentScanSerializer,
+                          CountryISOSerializer,
+                          IpAddressSerializer)
 from scanEngine.serializers import EngineTypeSerializer
 
 
+@api_view(['GET'])
 def scan_history(request, slug):
     host = ScanHistory.objects.filter(domain__project__slug=slug).order_by('-start_scan_date')
     context = {'scan_history_active': 'active', "scan_history": host}
@@ -218,11 +225,13 @@ def detail_scan(request, id, slug):
         last_scan = last_scans.order_by('-start_scan_date')[1]
         ctx['last_scan'] = last_scan
     if request_origin:
-        ctx['history'] = ScanHistorySerializer(ctx['history']).data
-        ctx['scan_activity'] = ScanActivitySerializer(ctx['scan_activity']).data
-        ctx['scan_engines'] = EngineTypeSerializer(ctx['scan_engines']).data
-        ctx['most_recent_scans'] = MostRecentScanSerializer(ctx['most_recent_scans']).data
-        ctx['asset_countries'] = CountryISOSerializer(ctx['asset_countries']).data
+        ctx['history'] = ScanHistorySerializer(scan).data
+        ctx['scan_activity'] = ScanActivitySerializer(scan_activity, many=True).data
+        ctx['scan_engines'] = EngineTypeSerializer(scan_engines, many=True).data
+        ctx['most_recent_scans'] = MostRecentScanSerializer(recent_scans.order_by('-start_scan_date')[:1], many=True).data
+        ctx['asset_countries'] = CountryISOSerializer(asset_countries, many=True).data
+        ctx['vulnerability_list'] = VulnerabilitySerializer(vulns.order_by('-severity').all(), many=True).data
+        ctx['most_common_vulnerability'] = VulnerabilitySerializer(common_vulns.values(), many=True).data
 
         return Response({ 'success': True, 'scan_results': ctx })
 
@@ -862,8 +871,10 @@ def customize_report(request, id):
     return render(request, 'startScan/customize_report.html', context)
 
 
-@has_permission_decorator(PERM_MODIFY_SCAN_REPORT, redirect_url=FOUR_OH_FOUR_URL)
+# @has_permission_decorator(PERM_MODIFY_SCAN_REPORT, redirect_url=FOUR_OH_FOUR_URL)
+@api_view(['GET'])
 def create_report(request, id):
+    request_origin = request.POST.get('request_origin', '')
     primary_color = '#FFB74D'
     secondary_color = '#212121'
     # get report type
@@ -980,6 +991,13 @@ def create_report(request, id):
 
     data['primary_color'] = primary_color
     data['secondary_color'] = secondary_color
+
+    if request_origin == 'api':
+        data['scan_object'] = ScanHistorySerializer(scan).data
+        data['subdomains'] = SubdomainSerializer(subdomains).data
+        data['ip_addresses'] = IpAddressSerializer(ip_addresses, many=True).data
+        data['all_vulnerabilities'] = VulnerabilitySerializer(vulns, many=True).data
+        return Response({ 'success': True, 'report': data })
 
     template = get_template('report/template.html')
     html = template.render(data)
