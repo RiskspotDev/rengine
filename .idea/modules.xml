@@ -3,6 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/rengine.iml" filepath="$PROJECT_DIR$/.idea/rengine.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../riskspot-dashboard/.idea/riskspot-dashboard.iml" filepath="$PROJECT_DIR$/../riskspot-dashboard/.idea/riskspot-dashboard.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../riskspot-server/.idea/riskspot-server.iml" filepath="$PROJECT_DIR$/../riskspot-server/.idea/riskspot-server.iml" />
     </modules>
   </component>
 </project>
