@@ -48,10 +48,10 @@ def subscan_history(request, slug):
     return render(request, 'startScan/subscan_history.html', context)
 
 
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 def detail_scan(request, id, slug):
     ctx = {}
-    request_origin = request.POST.get('request_origin')
+    request_origin = request.POST.get('request_origin', '')
     # Get scan objects
     scan = get_object_or_404(ScanHistory, id=id)
     domain_id = scan.domain.id
@@ -872,7 +872,7 @@ def customize_report(request, id):
 
 
 # @has_permission_decorator(PERM_MODIFY_SCAN_REPORT, redirect_url=FOUR_OH_FOUR_URL)
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 def create_report(request, id):
     request_origin = request.POST.get('request_origin', '')
     primary_color = '#FFB74D'
